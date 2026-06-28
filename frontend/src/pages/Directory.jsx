@@ -15,6 +15,8 @@ export default function Directory() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [query, setQuery] = useState("");
+    const [yearFrom, setYearFrom] = useState("");
+    const [yearTo, setYearTo] = useState("");
 
     useEffect(() => {
         let c = false;
@@ -29,10 +31,20 @@ export default function Directory() {
     useEffect(() => { api.get(`/cars/stats`).then(({ data }) => setStats(data)).catch(() => {}); }, []);
 
     const filtered = useMemo(() => {
-        if (!query.trim()) return cars;
-        const q = query.trim().toLowerCase();
-        return cars.filter((c) => c.car_name.toLowerCase().includes(q));
-    }, [cars, query]);
+        let out = cars;
+        if (query.trim()) {
+            const q = query.trim().toLowerCase();
+            out = out.filter((c) => c.car_name.toLowerCase().includes(q));
+        }
+        if (yearFrom) out = out.filter((c) => new Date(c.launch_date).getFullYear() >= Number(yearFrom));
+        if (yearTo) out = out.filter((c) => new Date(c.launch_date).getFullYear() <= Number(yearTo));
+        return out;
+    }, [cars, query, yearFrom, yearTo]);
+
+    const years = useMemo(() => {
+        const ys = new Set(cars.map((c) => new Date(c.launch_date).getFullYear()));
+        return Array.from(ys).sort((a, b) => a - b);
+    }, [cars]);
 
     const eligibleCount = filtered.filter((c) => c.is_eligible).length;
 
@@ -75,6 +87,52 @@ export default function Directory() {
 
                 {loading && <div className="font-mono-tech text-sm text-[color:var(--sa-text-2)] py-20 text-center" data-testid="loading-state">LOADING REGISTRY...</div>}
                 {error && <div className="font-mono-tech text-sm py-20 text-center" style={{color:'var(--sa-sell)'}} data-testid="error-state">{error.toUpperCase()}</div>}
+
+                {!loading && !error && (
+                    <div className="flex flex-wrap items-end gap-4 mb-6 pb-4 border-b border-[color:var(--sa-border)]" data-testid="filter-bar">
+                        <label className="flex flex-col">
+                            <span className="font-mono-tech text-[9px] text-[color:var(--sa-text-2)] tracking-widest mb-1.5">YEAR FROM</span>
+                            <select value={yearFrom} onChange={(e) => setYearFrom(e.target.value)}
+                                data-testid="filter-year-from"
+                                className="bg-[color:var(--sa-surface)] border border-[color:var(--sa-border-strong)] px-3 h-10 font-mono-tech text-xs text-[color:var(--sa-text)] outline-none focus:border-[color:var(--sa-brg)] min-w-[110px]">
+                                <option value="">Any</option>
+                                {years.map((y) => <option key={y} value={y}>{y}</option>)}
+                            </select>
+                        </label>
+                        <label className="flex flex-col">
+                            <span className="font-mono-tech text-[9px] text-[color:var(--sa-text-2)] tracking-widest mb-1.5">YEAR TO</span>
+                            <select value={yearTo} onChange={(e) => setYearTo(e.target.value)}
+                                data-testid="filter-year-to"
+                                className="bg-[color:var(--sa-surface)] border border-[color:var(--sa-border-strong)] px-3 h-10 font-mono-tech text-xs text-[color:var(--sa-text)] outline-none focus:border-[color:var(--sa-brg)] min-w-[110px]">
+                                <option value="">Any</option>
+                                {years.map((y) => <option key={y} value={y}>{y}</option>)}
+                            </select>
+                        </label>
+                        <div className="flex flex-col opacity-60 select-none" title="Price filter unlocks when richer dataset (price/mileage) ships in the next drop">
+                            <span className="font-mono-tech text-[9px] text-[color:var(--sa-text-2)] tracking-widest mb-1.5">BUDGET (€)</span>
+                            <div className="border border-dashed border-[color:var(--sa-border-strong)] px-3 h-10 flex items-center font-mono-tech text-xs text-[color:var(--sa-text-2)] min-w-[110px]" data-testid="filter-budget-locked">
+                                COMING SOON
+                            </div>
+                        </div>
+                        <div className="flex flex-col opacity-60 select-none" title="Mileage filter unlocks when richer dataset (price/mileage) ships in the next drop">
+                            <span className="font-mono-tech text-[9px] text-[color:var(--sa-text-2)] tracking-widest mb-1.5">MILEAGE · KM / MI</span>
+                            <div className="border border-dashed border-[color:var(--sa-border-strong)] px-3 h-10 flex items-center font-mono-tech text-xs text-[color:var(--sa-text-2)] min-w-[140px]" data-testid="filter-mileage-locked">
+                                COMING SOON
+                            </div>
+                        </div>
+                        {(yearFrom || yearTo) && (
+                            <button onClick={() => { setYearFrom(""); setYearTo(""); }}
+                                data-testid="filter-reset"
+                                className="h-10 px-4 font-mono-tech text-[11px] uppercase text-[color:var(--sa-text-2)] hover:text-[color:var(--sa-brg)] underline">
+                                Reset
+                            </button>
+                        )}
+                        <div className="ml-auto font-mono-tech text-[11px] text-[color:var(--sa-text-2)] pb-2">
+                            <span className="text-[color:var(--sa-brg)] font-bold" data-testid="filter-result-count">{filtered.length}</span> of {cars.length}
+                        </div>
+                    </div>
+                )}
+
                 {!loading && !error && filtered.length === 0 && <div className="font-mono-tech text-sm text-[color:var(--sa-text-2)] py-20 text-center" data-testid="empty-state">NO VEHICLES MATCH YOUR FILTERS.</div>}
                 {!loading && !error && filtered.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" data-testid="cars-grid">

@@ -26,6 +26,22 @@ export default function CarCard({ car, index }) {
                     <span className="inline-block w-1.5 h-1.5 bg-[color:var(--sa-brg)]" />
                     {car.category.toUpperCase()}
                 </div>
+                <div className="mt-4 grid grid-cols-3 border-t border-[color:var(--sa-border)]" data-testid="car-metric-row">
+                    <div className="px-2 py-3 border-r border-[color:var(--sa-border)]">
+                        <div className="font-mono-tech text-[9px] text-[color:var(--sa-text-2)] tracking-widest">YEAR</div>
+                        <div className="font-heading font-bold text-base text-[color:var(--sa-brg)] mt-0.5" data-testid="metric-year">{new Date(car.launch_date).getFullYear()}</div>
+                    </div>
+                    <div className="px-2 py-3 border-r border-[color:var(--sa-border)]">
+                        <div className="font-mono-tech text-[9px] text-[color:var(--sa-text-2)] tracking-widest">FREEDOM</div>
+                        <div className="font-heading font-bold text-base text-[color:var(--sa-brg)] mt-0.5">{new Date(car.vrt_freedom_date).getFullYear()}</div>
+                    </div>
+                    <div className="px-2 py-3">
+                        <div className="font-mono-tech text-[9px] text-[color:var(--sa-text-2)] tracking-widest">STATUS</div>
+                        <div className="font-heading font-bold text-base mt-0.5" style={{color: eligible ? 'var(--sa-eligible)' : 'var(--sa-amber)'}}>
+                            {eligible ? "ELIGIBLE" : "PENDING"}
+                        </div>
+                    </div>
+                </div>
             </div>
             <div className="border-t border-[color:var(--sa-border)] px-5 py-4 bg-[color:var(--sa-surface-2)]">
                 {eligible ? (
