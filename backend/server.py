@@ -207,28 +207,29 @@ async def send_magic_link_email(email: str, link: str) -> dict:
 
 # ------------------- Seeding -------------------
 async def seed_vrt_registry():
-    count = await db.vrt_registry.count_documents({})
-    if count > 0:
-        logger.info(f"VRT_Registry already seeded ({count} cars)")
-        return
     csv_path = ROOT_DIR / "cars_data.csv"
     if not csv_path.exists():
         return
-    docs = []
+    inserted = 0
     with open(csv_path, newline='', encoding='utf-8') as f:
         for row in csv.DictReader(f):
             name = row["Car_Name"].strip()
+            if await db.vrt_registry.find_one({"car_name": name}, {"_id": 1}):
+                continue
             cat = CATEGORY_MAP.get(row["Category"].strip(), row["Category"].strip())
-            docs.append(Car(
+            doc = Car(
                 car_name=name,
                 category=cat,
                 launch_date=f"{_extract_year(name)}-01-01",
                 vrt_freedom_date=row["VRT_Freedom_Date"].strip(),
                 external_link=None,
-            ).model_dump())
-    if docs:
-        await db.vrt_registry.insert_many(docs)
-        logger.info(f"Seeded {len(docs)} cars")
+            ).model_dump()
+            await db.vrt_registry.insert_one(doc)
+            inserted += 1
+    if inserted:
+        logger.info(f"Seeded {inserted} new cars from CSV")
+    else:
+        logger.info("CSV seed: all cars already present")
 
 
 async def ensure_indexes():
