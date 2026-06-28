@@ -1,0 +1,24 @@
+{
+  "summary": "Iteration 5 (frontend-only) verified: PARTNER_IDS config + applyUtm() decoration on sourcing links works as specified. All outbound sourcing hrefs (JDM and Euro variants) contain the three UTM params, original query keys are preserved, no forbidden partner params leak when PARTNER_IDS values are empty, and applyUtm is idempotent. Directory regressions clean: 188 total cars, 100 JDM default cards, 100 badge-eligible, 0 badge-active, 0 countdown, back-link routes home, no console errors, no mobile horizontal overflow at 390x800.",
+  "tested_scope": ["frontend", "integration"],
+  "passed": [
+    "GET /api/cars/stats -> total:188, by_category Performance/JDM:100, Everyday/Euro Classic:88",
+    "Default directory renders 100 JDM cards",
+    "Badges: 100 badge-eligible, 0 badge-active, 0 countdown-display (regression OK)",
+    "JDM detail page: sourcing-link-{donedeal,carzone,carsie,beforward,goonet,tradecarview,jdmbuysell,revenue-vrt} all contain utm_source=sovereign_auto, utm_medium=affiliate, utm_campaign=vrt_sourcing",
+    "JDM original query keys preserved (words=, keyword=, search=, stext=, keyword=, key=, s=)",
+    "Euro detail page: sourcing-link-{mobilede,autotrader,autoscout24,classicdriver,donedeal,carzone,carsie,revenue-vrt} all carry all 3 UTM params with ms=, keywords=, q=, keyword= preserved",
+    "Empty PARTNER_IDS: no href contains ?ref=, &ref=, ?af=, &af=, partnerid=, partner=, or utm_content= (forbidden audit clean for all 16 hrefs across both variants)",
+    "applyUtm idempotency: re-reading href yields identical string; no duplicate UTM params (utm_dupes empty across all hrefs)",
+    "detail-back-link returns to / and 100 JDM cards re-render",
+    "category-toggle-euro present and switches grid + opens Euro detail with Euro import links",
+    "Mobile 390x800: documentElement scrollWidth==clientWidth (390==390), no horizontal overflow",
+    "Zero console errors on directory load and detail loads"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100% (sanity only)", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "Sample JDM car tested: Nissan Skyline GT-R R32. Sample Euro car tested: 1989 Porsche 911 964 Carrera. PARTNER_IDS values are intentionally empty in .env, so partner-specific params + utm_content correctly remain absent. Per request, backend was not exhaustively retested."
+}
