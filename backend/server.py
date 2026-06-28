@@ -92,6 +92,15 @@ class NotifyIn(BaseModel):
     email: EmailStr
 
 
+class QuizAnswers(BaseModel):
+    use_case: Optional[str] = None
+    seats: Optional[int] = None
+    reliability: Optional[int] = None
+    maintenance_tier: Optional[str] = None
+    price_tier: Optional[str] = None
+    category: Optional[str] = None  # optional pre-filter
+
+
 # ------------------- Helpers -------------------
 def _extract_year(name: str) -> int:
     m = re.match(r"\s*(\d{4})", name)
@@ -193,6 +202,127 @@ async def _sentiment_for_car(car_id: str, user: Optional[dict]) -> SentimentSumm
 def _to_public(doc: dict, sentiment: Optional[SentimentSummary] = None) -> CarPublic:
     base = Car(**doc)
     return CarPublic(**base.model_dump(), **_compute_status(base.vrt_freedom_date), sentiment=sentiment)
+
+
+# ------------------- Tag derivation (heuristic) -------------------
+# Used by the "Find Your Classic Match" quiz to score cars against user prefs.
+_RELIABLE_MAKES = {"honda", "toyota", "lexus", "mazda", "subaru"}
+_MID_MAKES = {"nissan", "bmw", "audi", "mercedes-benz", "mercedes", "vw", "volkswagen", "porsche"}
+_FRAGILE_KEYWORDS = ("alfa", "lotus", "lancia", "ferrari", "lamborghini", "maserati", "tvr")
+_EXOTIC_KEYWORDS = ("ferrari", "lamborghini", "lfa", "carrera gt", "f40", "f50", "enzo", "diablo", "countach", "mclaren")
+_PREMIUM_KEYWORDS = ("m3", "m5", "m6", " amg", "rs4", "rs6", "carrera", "gt3", "gt-r", "supra", "nsx", "stelvio", "evo", "sti")
+_COUPE_KEYWORDS = ("coupe", "coupé", "rx-7", "rx7", "supra", "nsx", "gt-r", "skyline", "celica", "mr2", "180sx", "200sx", "240sx", "silvia", "rs200", "type r ek9", "type r dc2", "z3", "z4", "tt", "boxster", "elise", "exige", "s2000", "s2k", "miata", "mx-5", "carrera", "911", "f40", "lfa", "evo", "integra type r", "civic type r")
+_FAMILY_KEYWORDS = ("touring", "wagon", "estate", "kombi", "saloon", "sedan", "executive", "e39", "e34", "e36 saloon", "w124", "w210", "w202", "stagea", "chaser", "aristo", "altezza", "passat", "octavia", "accord", "primera", "legacy", "forester", "outback")
+
+
+def _name_lower(car: dict) -> str:
+    return (car.get("car_name") or "").lower()
+
+
+def _derive_make(car_name: str) -> str:
+    nm = (car_name or "").lower()
+    for m in ["mercedes-benz", "alfa romeo", "land rover", "range rover", "aston martin",
+              "mitsubishi", "volkswagen", "porsche", "renault", "nissan", "toyota",
+              "subaru", "mazda", "honda", "lexus", "ferrari", "lamborghini", "lancia",
+              "lotus", "alpina", "peugeot", "audi", "bmw", "ford"]:
+        if m in nm:
+            return m.title().replace("Bmw", "BMW")
+    return ""
+
+
+def _derive_tags(car: dict) -> dict:
+    nm = _name_lower(car)
+    make = _derive_make(car.get("car_name") or "")
+    make_l = make.lower()
+    cat = (car.get("category") or "").lower()
+
+    # Reliability score 1–5
+    if make_l in _RELIABLE_MAKES:
+        reliability = 5
+    elif any(k in nm for k in _FRAGILE_KEYWORDS):
+        reliability = 2
+    elif make_l in _MID_MAKES:
+        reliability = 4
+    else:
+        reliability = 3
+
+    # Seats
+    if any(k in nm for k in _COUPE_KEYWORDS):
+        seats = 2
+    elif any(k in nm for k in _FAMILY_KEYWORDS):
+        seats = 5
+    else:
+        seats = 4
+
+    # Use case
+    if seats == 2 or any(k in nm for k in ("nsx", "lfa", "carrera gt", "f40", "supra rz", "22b", "type r")):
+        use_case = "weekend"
+    elif seats == 5 or any(k in nm for k in ("touring", "wagon", "saloon", "estate")):
+        use_case = "daily"
+    else:
+        use_case = "weekend"
+
+    # Price tier
+    if any(k in nm for k in _EXOTIC_KEYWORDS):
+        price_tier = "exotic"
+    elif any(k in nm for k in _PREMIUM_KEYWORDS) or "porsche 911" in nm or "ferrari" in nm:
+        price_tier = "premium"
+    elif "jdm" in cat and any(k in nm for k in ("supra", "gt-r", "rx-7", "nsx", "evo", "sti", "22b")):
+        price_tier = "premium"
+    elif make_l in _RELIABLE_MAKES:
+        price_tier = "budget"
+    else:
+        price_tier = "mid"
+
+    # Maintenance tier
+    if price_tier in ("exotic", "premium") or any(k in nm for k in ("rotary", "rx-7", "rx7", "alfa", "lancia")):
+        maintenance_tier = "high"
+    elif make_l in _RELIABLE_MAKES:
+        maintenance_tier = "low"
+    else:
+        maintenance_tier = "mid"
+
+    return {
+        "make": make,
+        "use_case": use_case,
+        "seats": seats,
+        "reliability": reliability,
+        "maintenance_tier": maintenance_tier,
+        "price_tier": price_tier,
+    }
+
+
+def _score_car_against_quiz(tags: dict, answers: dict) -> int:
+    score = 0
+    if answers.get("use_case") and tags.get("use_case") == answers["use_case"]:
+        score += 25
+    if answers.get("seats") is not None:
+        # Exact match = 20; 1-step diff = 10
+        diff = abs(int(tags.get("seats", 0)) - int(answers["seats"]))
+        score += max(0, 20 - diff * 10)
+    if answers.get("reliability") is not None:
+        diff = abs(int(tags.get("reliability", 0)) - int(answers["reliability"]))
+        score += max(0, 20 - diff * 5)
+    tier_order = ["budget", "mid", "premium", "exotic"]
+    for key in ("price_tier", "maintenance_tier"):
+        a = answers.get(key)
+        t = tags.get(key)
+        if a and t:
+            if key == "maintenance_tier":
+                order = ["low", "mid", "high"]
+                diff = abs(order.index(t) - order.index(a)) if a in order and t in order else 2
+                score += max(0, 15 - diff * 7)
+            else:
+                # User says "premium" budget = also happy with "mid" or "budget" but not "exotic".
+                # Reward equal or one-below-user-tier.
+                if t in tier_order and a in tier_order:
+                    delta = tier_order.index(t) - tier_order.index(a)
+                    if delta <= 0:
+                        score += 20 + delta * 6  # closer to ceiling = better
+                    else:
+                        score -= delta * 15      # exceeding budget penalised
+    return score
+
 
 
 # ------------------- Email (mock) -------------------
@@ -421,6 +551,39 @@ async def cast_vote(car_id: str, payload: VoteIn, user: dict = Depends(get_curre
         upsert=True,
     )
     return await _sentiment_for_car(car_id, user)
+
+
+# ------------------- Endpoints: quiz match -------------------
+@api_router.post("/quiz/match")
+async def quiz_match(answers: QuizAnswers, limit: int = 6):
+    """Score every car against the user's quiz answers and return the top N matches."""
+    limit = max(1, min(24, limit))
+    q = {}
+    if answers.category:
+        q["category"] = answers.category
+    docs = await db.vrt_registry.find(q, {"_id": 0}).to_list(2000)
+
+    ans = answers.model_dump(exclude_none=True)
+    scored = []
+    for d in docs:
+        tags = _derive_tags(d)
+        score = _score_car_against_quiz(tags, ans)
+        scored.append((score, tags, d))
+
+    scored.sort(key=lambda t: (-t[0], t[2].get("vrt_freedom_date", "")))
+    out = []
+    for score, tags, d in scored[:limit]:
+        status = _compute_status(d["vrt_freedom_date"])
+        out.append({
+            "id": d["id"],
+            "car_name": d["car_name"],
+            "category": d["category"],
+            "vrt_freedom_date": d["vrt_freedom_date"],
+            "match_score": score,
+            "tags": tags,
+            **status,
+        })
+    return {"answers": ans, "matches": out, "total_scored": len(scored)}
 
 
 # ------------------- Endpoints: VRT freedom notifications -------------------

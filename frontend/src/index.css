@@ -54,6 +54,13 @@ body {
 }
 .sa-fade-up { animation: sa-fade-up 0.35s ease-out both; }
 
+.sa-grain {
+    background-image: radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px);
+    background-size: 3px 3px;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+}
+
 @keyframes sa-marquee {
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }

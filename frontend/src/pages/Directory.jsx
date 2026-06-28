@@ -6,6 +6,9 @@ import StatBar from "@/components/StatBar";
 import TrendingTicker from "@/components/TrendingTicker";
 import SuggestionForm from "@/components/SuggestionForm";
 import MostWatchedCarousel from "@/components/MostWatchedCarousel";
+import Hero from "@/components/Hero";
+import ClassicMatchQuiz from "@/components/ClassicMatchQuiz";
+import ImportGuide from "@/components/ImportGuide";
 
 const CATEGORIES = { JDM: "Performance / JDM", EURO: "Everyday / Euro Classic" };
 
@@ -54,24 +57,9 @@ export default function Directory() {
             <Header activeCat={activeCat} onChange={setActiveCat} categories={CATEGORIES} query={query} onQueryChange={setQuery} />
             <TrendingTicker />
 
-            <section className="relative border-b border-[color:var(--sa-border)]" data-testid="hero-section">
-                <div className="max-w-7xl mx-auto px-6 md:px-10 py-14 md:py-20">
-                    <div className="flex items-center gap-3 font-mono-tech text-xs text-[color:var(--sa-text-2)] mb-6">
-                        <span className="inline-block w-2 h-2 bg-[color:var(--sa-eligible)] rounded-full" />
-                        <span>CLASSICDRIVE.IE // THE ELITE REGISTRY</span>
-                        <span className="text-[color:var(--sa-text-2)] opacity-60">/</span><span>EST. 2026</span>
-                    </div>
-                    <h1 className="font-heading font-black text-5xl sm:text-6xl lg:text-8xl leading-[0.9]" data-testid="hero-title">
-                        Thirty years.<br />
-                        <span className="text-[color:var(--sa-text-2)]">Two hundred euro.</span><br />
-                        One elite registry.
-                    </h1>
-                    <p className="mt-8 max-w-2xl text-base md:text-lg text-[color:var(--sa-text-2)] leading-relaxed">
-                        <span className="text-[color:var(--sa-brg)] font-semibold">The Elite Registry</span> — a hand-curated catalogue of classic JDM &amp; European cars eligible for Ireland's <span className="text-[color:var(--sa-brg)] font-semibold">€200 flat-rate VRT</span> exemption. Heritage data. Live sentiment. Monthly drops.
-                    </p>
-                    {stats && <StatBar stats={stats} />}
-                </div>
-            </section>
+            <Hero stats={stats} />
+
+            <ClassicMatchQuiz />
 
             <MostWatchedCarousel />
 
@@ -145,6 +133,8 @@ export default function Directory() {
 
                 <SuggestionForm />
             </section>
+
+            <ImportGuide />
 
             <footer className="border-t border-[color:var(--sa-border)] py-8 px-6 md:px-10" data-testid="footer">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 font-mono-tech text-xs text-[color:var(--sa-text-2)]">
