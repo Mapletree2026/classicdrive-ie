@@ -57,7 +57,7 @@ export default function Directory() {
                 <div className="max-w-7xl mx-auto px-6 md:px-10 py-14 md:py-20">
                     <div className="flex items-center gap-3 font-mono-tech text-xs text-[color:var(--sa-text-2)] mb-6">
                         <span className="inline-block w-2 h-2 bg-[color:var(--sa-eligible)] rounded-full" />
-                        <span>RETRODRIVE.IE // THE ELITE REGISTRY</span>
+                        <span>CLASSICDRIVE.IE // THE ELITE REGISTRY</span>
                         <span className="text-[color:var(--sa-text-2)] opacity-60">/</span><span>EST. 2026</span>
                     </div>
                     <h1 className="font-heading font-black text-5xl sm:text-6xl lg:text-8xl leading-[0.9]" data-testid="hero-title">
@@ -145,7 +145,7 @@ export default function Directory() {
 
             <footer className="border-t border-[color:var(--sa-border)] py-8 px-6 md:px-10" data-testid="footer">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 font-mono-tech text-xs text-[color:var(--sa-text-2)]">
-                    <div>© {new Date().getFullYear()} RETRODRIVE.IE · IRISH CLASSIC &amp; JDM REGISTRY</div>
+                    <div>© {new Date().getFullYear()} CLASSICDRIVE.IE · IRISH CLASSIC &amp; JDM REGISTRY</div>
                     <div>VRT_REGISTRY // v1.2 // IRELAND</div>
                 </div>
             </footer>

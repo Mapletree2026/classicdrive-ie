@@ -36,7 +36,7 @@ export default function AuthVerify() {
         <div className="min-h-screen flex items-center justify-center px-6" data-testid="auth-verify-page">
             <div className="w-full max-w-md border border-white/15 bg-[#0a0a0a] p-8">
                 <div className="font-mono-tech text-[10px] text-white/40 tracking-widest mb-4">
-                    RETRODRIVE.IE · AUTH
+                    CLASSICDRIVE.IE · AUTH
                 </div>
                 {state === "loading" && (
                     <div className="flex items-center gap-3 text-white" data-testid="auth-verify-loading">

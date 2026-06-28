@@ -71,7 +71,7 @@ export default function SourcingSection({ carName, category }) {
             </div>
 
             <p className="font-mono-tech text-[10px] text-[color:var(--sa-text-2)] mt-6 leading-relaxed">
-                External listings are deep-linked search results, not endorsements. RetroDrive.ie may receive a referral fee from partner platforms.
+                External listings are deep-linked search results, not endorsements. ClassicDrive.ie may receive a referral fee from partner platforms.
             </p>
         </section>
     );
