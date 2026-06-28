@@ -52,6 +52,7 @@ class Car(BaseModel):
     launch_date: str
     vrt_freedom_date: str
     external_link: Optional[str] = None
+    image_url: Optional[str] = None
 
 
 class SentimentSummary(BaseModel):

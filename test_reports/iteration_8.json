@@ -1,0 +1,37 @@
+{
+  "summary": "Backend-only verification of car image_url backfill bug fix. All 11 pytest cases pass. 216/217 cars (99.5%) have image_url populated; 97 unique Wikimedia URLs across the catalogue. The single missing car ('2010 Audi RS5 V8') is the known/acknowledged gap and gracefully falls back to the category placeholder via frontend lib/images.js. No regressions in /api/cars, /api/cars/{id}, /api/cars/stats, /api/cars/most-watched, or /api/quiz/match.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET upload.wikimedia.org (external)", "issue": "Wikimedia rate-limits the container's egress IP (returns 429/403) when many image URLs are requested in rapid succession or in parallel. This did NOT indicate broken URLs — after backoff every sampled URL returned HTTP 200. Real end-user browsers won't share this egress IP so it is unlikely to affect production, but if the registry page renders all 217 images at once from a single client, Wikimedia hot-linking policy could throttle thumbnails. Consider proxying/caching images through your own CDN long-term."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_car_images.py",
+    "/app/test_reports/pytest/car_images_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Backfill image_url for '2010 Audi RS5 V8' — currently it is the only car without a per-car image (falls back to Euro Classic placeholder). The category fallback is already correct so this is non-blocking.",
+    "(Long-term, optional) Mirror Wikimedia thumbnails to your own CDN or store to avoid potential hot-link throttling once the site receives real traffic."
+  ],
+  "critical_code_review_comments": [
+    "server.py Car model now exposes image_url: Optional[str] = None and CarPublic inherits it — clean, minimal change. ✅",
+    "scripts/sync_car_images.py is a one-shot backfill — make sure the script is idempotent and re-runnable for future car additions; consider wiring it into the seed routine so newly-added cars get an image automatically rather than requiring a manual run.",
+    "Frontend hot-links upload.wikimedia.org directly. This works but Wikimedia's policy discourages large-scale hot-linking; consider local thumbnails or a CDN proxy for scale."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_car_images.py (new)"
+  ],
+  "success_rate": {"backend": "100% (11/11 pytest)", "frontend": "not tested per request"},
+  "test_credentials": "none required for this test scope",
+  "seed_data_creation": "none — read-only verification against existing seeded DB",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Acceptance numbers locked in: 216/217 cars (99.5%) have image_url, 97 unique URLs, every URL is on upload.wikimedia.org. The reachability test uses HEAD + backoff and runs sequentially (override addopts to disable xdist parallel workers) because Wikimedia heavily rate-limits the container egress IP. If you re-run, use: pytest backend/tests/test_car_images.py -o addopts=''. The only car without an image_url is '2010 Audi RS5 V8' and that's by design.",
+  "rca_of_the_issue": "Root cause: original Car model had no image_url field; frontend getCarImage() fell back to a single category placeholder (Mazda RX-7 for JDM, a single Euro photo for Euro Classic), making every JDM card look identical. Fix verified: (1) Car/CarPublic now expose image_url, (2) sync_car_images.py populated 216/217 cars with model-specific Wikimedia commons thumbnails (resolved via Wikipedia REST summary + Wikimedia imageinfo APIs), (3) frontend already preferred car.image_url. End-to-end backend contract is correct."
+}
