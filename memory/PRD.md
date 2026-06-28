@@ -27,7 +27,10 @@ Initialize a full-stack, mobile-responsive web application called "Sovereign Aut
 - Frontend: sticky header with brand + segmented category toggle (desktop) + mobile toggle row, hero, scrolling ticker, stat bar, responsive 1–4 col card grid, search filter, footer
 - Conditional badges + countdown formatting on cards
 - Motorsport editorial aesthetic (Barlow Condensed, IBM Plex Mono, Chivo)
-- 100% backend + frontend test pass (iteration_1)
+- **Iteration 2 (2026-02):** Email Magic Link auth (MOCKED Resend — backend returns the link in `/api/auth/request-link` response for dev). Endpoints `/api/auth/request-link`, `/api/auth/verify`, `/api/auth/me`, `/api/auth/logout`. JWT (14-day) stored client-side in `localStorage.sa_token`, sent as `Authorization: Bearer ...`. Tokens are SHA-256-hashed in DB, single-use, 15-min TTL with Mongo TTL index.
+- **Sentiment Index (Buy / Hold / Sell):** `POST /api/cars/{id}/vote` (auth, upsert), `GET /api/cars/{id}/sentiment` (public). Vote model with unique compound index `(car_id,user_id)` so the same user can change vote anytime — never duplicates. Dedicated `/car/:carId` detail page with stacked sentiment bar, 3 vote buttons, "YOUR VOTE" badge, percentages visible publicly.
+- Frontend: `AuthProvider` + `LoginDialog` modal with dev-mode magic link display, `AuthVerify` page, user menu with email + logout in header.
+- 100% backend + frontend tests pass (iteration_2)
 
 ## Personas
 1. Irish classic-car enthusiast tracking when their car drops to €200 VRT
