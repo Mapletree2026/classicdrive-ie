@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import LoginDialog from "@/components/LoginDialog";
 import SourcingSection from "@/components/SourcingSection";
 import NotifyWidget from "@/components/NotifyWidget";
+import VRTDisclaimer from "@/components/VRTDisclaimer";
 import { ArrowLeft, ExternalLink, TrendingUp, Minus, TrendingDown, Lock, Timer } from "lucide-react";
 
 function formatDate(iso) {
@@ -95,6 +96,8 @@ export default function CarDetail() {
                             data-testid="detail-badge-active"><Timer size={14}/>⏳ COUNTDOWN ACTIVE</div>
                     )}
                 </div>
+
+                <VRTDisclaimer />
 
                 <section className="mt-16 border-t border-[color:var(--sa-border)] pt-10" data-testid="sentiment-section">
                     <div className="flex items-baseline justify-between mb-2">
