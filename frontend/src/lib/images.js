@@ -30,9 +30,12 @@ export const HERO_IMAGES = [
 ];
 
 // Per-category placeholder for car cards when no individual image is set.
+// 1280px is the smallest Wikimedia-supported thumbnail size for these specific
+// source files (smaller widths like 800px return HTTP 400). The browser scales
+// down for the actual card render so payload is still modest.
 export const CATEGORY_IMAGES = {
-    "Performance / JDM": WM(RX7_1994, 800),
-    "Everyday / Euro Classic": WM(ESCORT_COSSIE, 800),
+    "Performance / JDM": WM(RX7_1994, 1280),
+    "Everyday / Euro Classic": WM(ESCORT_COSSIE, 1280),
 };
 
 // Map a single car to its display image:
