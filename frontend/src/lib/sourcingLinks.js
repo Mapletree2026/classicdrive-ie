@@ -7,7 +7,7 @@
 // Anything left as an empty string is silently skipped (no broken params).
 // Optionally override at deploy time via REACT_APP_* env vars.
 export const PARTNER_IDS = {
-    donedeal:       process.env.REACT_APP_AFF_DONEDEAL       || "", // e.g. "sovereign-auto"
+    donedeal:       process.env.REACT_APP_AFF_DONEDEAL       || "", // e.g. "retrodrive-ie"
     carzone:        process.env.REACT_APP_AFF_CARZONE        || "",
     carsie:         process.env.REACT_APP_AFF_CARSIE         || "",
     beforward:      process.env.REACT_APP_AFF_BEFORWARD      || "", // BE FORWARD affiliate code
@@ -39,7 +39,7 @@ const PARTNER_PARAM = {
 
 // Default UTM payload — same for every outbound click.
 export const DEFAULT_UTM = {
-    utm_source: "sovereign_auto",
+    utm_source: "retrodrive_ie",
     utm_medium: "affiliate",
     utm_campaign: "vrt_sourcing",
 };

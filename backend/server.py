@@ -25,7 +25,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # ------------------- App -------------------
-app = FastAPI(title="Sovereign Automotive API")
+app = FastAPI(title="RetroDrive.ie API")
 api_router = APIRouter(prefix="/api")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -241,7 +241,7 @@ async def on_shutdown():
 # ------------------- Endpoints: root + cars -------------------
 @api_router.get("/")
 async def root():
-    return {"message": "Sovereign Automotive API", "version": "1.1"}
+    return {"message": "RetroDrive.ie API", "version": "1.2"}
 
 
 @api_router.get("/cars", response_model=List[CarPublic])

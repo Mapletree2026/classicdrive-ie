@@ -14,8 +14,8 @@ export default function Header({ activeCat, onChange, categories, query, onQuery
                         <span className="text-[color:var(--sa-bg)] font-heading font-black text-sm leading-none">S</span>
                     </div>
                     <div className="leading-none">
-                        <div className="font-heading font-black text-base text-[color:var(--sa-brg)] tracking-wide">SOVEREIGN</div>
-                        <div className="font-mono-tech text-[10px] text-[color:var(--sa-text-2)] tracking-widest">AUTOMOTIVE</div>
+                        <div className="font-heading font-black text-base text-[color:var(--sa-brg)] tracking-wide">RETRODRIVE</div>
+                        <div className="font-mono-tech text-[10px] text-[color:var(--sa-text-2)] tracking-widest">.IE · IRISH CLASSIC &amp; JDM</div>
                     </div>
                 </a>
                 {categories && (

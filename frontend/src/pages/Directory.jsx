@@ -84,7 +84,7 @@ export default function Directory() {
 
             <footer className="border-t border-[color:var(--sa-border)] py-8 px-6 md:px-10" data-testid="footer">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 font-mono-tech text-xs text-[color:var(--sa-text-2)]">
-                    <div>© {new Date().getFullYear()} SOVEREIGN AUTOMOTIVE</div>
+                    <div>© {new Date().getFullYear()} RETRODRIVE.IE · IRISH CLASSIC &amp; JDM REGISTRY</div>
                     <div>VRT_REGISTRY // v1.2 // IRELAND</div>
                 </div>
             </footer>
