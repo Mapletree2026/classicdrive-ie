@@ -1,0 +1,26 @@
+{
+  "summary": "Iteration 4 testing — verified live data (188 cars), directory render with VRT badges, and the new client-side Sourcing & Imports section on car detail pages. JDM vs Euro variant logic confirmed correct, query parsing works, back-link routing works, invalid id shows error, mobile renders without overflow. No blockers.",
+  "tested_scope": ["frontend", "backend", "integration"],
+  "passed": [
+    "GET /api/cars/stats -> {total:188, eligible:188, pending:0, by_category:{Performance / JDM:100, Everyday / Euro Classic:88}} matches spec",
+    "GET /api/cars returns 188 items",
+    "Directory renders 100 car cards on default Performance/JDM filter; stat bar contains 188",
+    "VRT regression: 100 badge-eligible, 0 badge-active, 0 countdown-display elements on visible cards",
+    "JDM detail: sourcing-section visible; all 8 expected testids present (donedeal, carzone, carsie, beforward, goonet, tradecarview, jdmbuysell, revenue-vrt); no Euro ids leaked",
+    "JDM affiliate query parsed as 'Nissan Skyline GT-R R32'; donedeal href = https://www.donedeal.ie/cars?words=Nissan%20Skyline%20GT-R%20R32; target=_blank; rel='noopener noreferrer sponsored'",
+    "Euro Classic detail: sourcing-section visible; Irish 3 + Euro 4 (mobilede, autotrader, autoscout24, classicdriver) + revenue-vrt present; JDM ids absent; query='Porsche 911 964 Carrera'",
+    "Back link returns from detail to /, cars-grid renders again",
+    "/car/invalid-id renders detail-error",
+    "Mobile 390x800: sourcing-section renders with width 342px (no horizontal overflow at 390 viewport)"
+  ],
+  "failed": [
+    {"area": "console", "issue": "2 generic 404 console messages on directory load (likely favicon/static asset); no app errors, no integration impact", "evidence": "Failed to load resource: the server responded with a status of 404 () x2", "priority": "LOW"}
+  ],
+  "action_items": [
+    "Optional (LOW): investigate the two 404 static-asset requests on directory load — purely cosmetic console noise, not blocking."
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "mocked_apis": ["EMAIL_MODE=mock (user-confirmed intentional)"]
+}

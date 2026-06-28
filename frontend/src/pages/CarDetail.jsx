@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import LoginDialog from "@/components/LoginDialog";
+import SourcingSection from "@/components/SourcingSection";
 import { ArrowLeft, ExternalLink, TrendingUp, Minus, TrendingDown, Lock } from "lucide-react";
 
 function formatDate(iso) {
@@ -215,6 +216,8 @@ export default function CarDetail() {
                         </div>
                     )}
                 </section>
+
+                <SourcingSection carName={car.car_name} category={car.category} />
             </div>
 
             <LoginDialog open={showLogin} onOpenChange={setShowLogin} />
