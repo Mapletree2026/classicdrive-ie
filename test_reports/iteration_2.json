@@ -1,0 +1,49 @@
+{
+  "summary": "Backend auth + voting + listing endpoints all pass. Frontend critical flow (request magic link -> dev link -> verify -> user-menu -> car detail -> vote BUY -> switch SELL -> logout) all pass. Minor UX/testid gap on unauthenticated car detail page: data-testid='sentiment-login-prompt' was not found and vote-button-* not rendered for unauth visitors.",
+  "tested_scope": ["backend", "frontend", "auth", "integration"],
+  "passed": [
+    "POST /api/auth/request-link valid email -> ok:true, mode:mock, magic_link contains /auth/verify?token=",
+    "POST /api/auth/request-link invalid email -> 422",
+    "GET /api/auth/verify with magic token -> returns access_token + user{id,email}",
+    "Reuse same magic token -> 400 'Link already used'",
+    "GET /api/auth/verify bogus token -> 400 'Invalid or expired link'",
+    "GET /api/auth/me without auth -> 401; with Bearer JWT -> user object",
+    "POST /api/cars/{id}/vote without auth -> 401",
+    "POST vote sentiment=buy -> SentimentSummary with user_vote='buy'",
+    "POST vote sentiment=sell same user -> upserts to user_vote='sell' with NO duplicate (total stayed at 2, including pre-existing other-user vote; this user's vote correctly moved buy->sell)",
+    "POST vote sentiment=invalid -> 422; unknown car_id -> 404",
+    "GET /api/cars/{id}/sentiment public -> tallies present, user_vote=null",
+    "GET /api/cars/{id} returns embedded sentiment field",
+    "GET /api/cars/stats -> total 188, JDM 100, Euro 88",
+    "GET /api/cars?category=Performance / JDM -> 100; ?category=Everyday / Euro Classic -> 88",
+    "Frontend home loads, header-login-button visible (default 100 JDM cards rendered)",
+    "Clicking header-login-button opens login-dialog",
+    "Login submit displays login-dev-magic-link",
+    "Clicking dev magic link navigates SPA, verifies, header shows user-menu",
+    "Clicking a car-card navigates to /car/:id; detail page renders sentiment section",
+    "Authenticated vote BUY -> vote-buy-your-choice tag visible",
+    "Switch to SELL -> vote-sell-your-choice visible, buy tag removed (count=0), counts update without reload",
+    "logout-button clears session; header returns to 'Sign in'"
+  ],
+  "failed": [
+    {
+      "area": "Frontend - Car detail (unauthenticated)",
+      "issue": "data-testid='sentiment-login-prompt' element not found on unauth car detail page (count=0). Also vote-button-buy/sell are not rendered for unauthenticated visitors, so the spec'd behavior 'clicking a vote button opens login dialog' could not be verified via UI.",
+      "evidence": "Playwright: unauth detail prompt count=0; vote-button-buy locator count=0 on unauth detail page.",
+      "priority": "MEDIUM"
+    },
+    {
+      "area": "Backend - category filter naming",
+      "issue": "Short labels (category=JDM or category=Euro Classic) return 0 results. Only full labels 'Performance / JDM' and 'Everyday / Euro Classic' return data. This matches stats labels but frontend toggle should be verified to use the full labels (toggle UI shows correct counts: default JDM=100 cards).",
+      "evidence": "curl ?category=JDM -> 0; ?category=Performance%20%2F%20JDM -> 100",
+      "priority": "LOW"
+    }
+  ],
+  "action_items": [
+    "Add data-testid='sentiment-login-prompt' to the unauthenticated state of the sentiment section on /car/:id, OR confirm whether vote buttons should be visible (currently disabled) for unauth users; if visible, ensure clicking them opens LoginDialog per spec.",
+    "(Optional) Confirm category filter accepts the full labels as designed; no action needed if frontend always sends the full label."
+  ],
+  "success_rate": {"backend": "100%", "frontend": "92%"},
+  "retest_needed": false,
+  "full_testing_deferred": true
+}

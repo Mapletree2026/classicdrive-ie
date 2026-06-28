@@ -1,35 +1,41 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Query
 from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
-import os
-import csv
-import logging
-import re
-import uuid
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional
-from datetime import datetime, timezone, date
-
+import os
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends, Request
+from starlette.middleware.cors import CORSMiddleware
+from motor.motor_asyncio import AsyncIOMotorClient
+import csv
+import logging
+import re
+import uuid
+import secrets
+import hashlib
+import jwt
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from typing import List, Optional, Literal
+from datetime import datetime, timezone, timedelta
+
+# ------------------- Mongo -------------------
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# ------------------- App -------------------
 app = FastAPI(title="Sovereign Automotive API")
 api_router = APIRouter(prefix="/api")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+JWT_ALGO = "HS256"
+JWT_TTL_DAYS = 14
+MAGIC_TTL_MIN = 15
+SENTIMENTS = ("buy", "hold", "sell")
 
-# ---------- Category mapping ----------
-# Source data uses "JDM" / "Euro Classic". Spec UI uses
-# "Performance / JDM" and "Everyday / Euro Classic".
 CATEGORY_MAP = {
     "JDM": "Performance / JDM",
     "Euro Classic": "Everyday / Euro Classic",
@@ -37,16 +43,26 @@ CATEGORY_MAP = {
 ALLOWED_CATEGORIES = list(CATEGORY_MAP.values())
 
 
-# ---------- Models ----------
+# ------------------- Models -------------------
 class Car(BaseModel):
     model_config = ConfigDict(extra="ignore")
-
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     car_name: str
-    category: str  # "Performance / JDM" or "Everyday / Euro Classic"
-    launch_date: str  # ISO date
-    vrt_freedom_date: str  # ISO date
+    category: str
+    launch_date: str
+    vrt_freedom_date: str
     external_link: Optional[str] = None
+
+
+class SentimentSummary(BaseModel):
+    buy: int = 0
+    hold: int = 0
+    sell: int = 0
+    total: int = 0
+    buy_pct: float = 0.0
+    hold_pct: float = 0.0
+    sell_pct: float = 0.0
+    user_vote: Optional[str] = None
 
 
 class CarPublic(Car):
@@ -54,20 +70,28 @@ class CarPublic(Car):
     is_eligible: bool
     status_label: str
     countdown_display: Optional[str] = None
+    sentiment: Optional[SentimentSummary] = None
 
 
-# ---------- Helpers ----------
+class RequestLinkIn(BaseModel):
+    email: EmailStr
+
+
+class VoteIn(BaseModel):
+    sentiment: Literal["buy", "hold", "sell"]
+
+
+# ------------------- Helpers -------------------
 def _extract_year(name: str) -> int:
     m = re.match(r"\s*(\d{4})", name)
     return int(m.group(1)) if m else 1990
 
 
 def _compute_status(vrt_freedom_iso: str) -> dict:
-    """Return time_left_days, is_eligible, status_label, countdown_display."""
     freedom = datetime.fromisoformat(vrt_freedom_iso).replace(tzinfo=timezone.utc)
     now = datetime.now(timezone.utc)
     delta = freedom - now
-    days_left = delta.days  # floor for positive, truncates for negative
+    days_left = delta.days
 
     if delta.total_seconds() <= 0:
         return {
@@ -76,103 +100,159 @@ def _compute_status(vrt_freedom_iso: str) -> dict:
             "status_label": "👑 €200 FLAT VRT ELIGIBLE",
             "countdown_display": None,
         }
-
     if days_left > 30:
         months = days_left // 30
-        rem_days = days_left % 30
-        countdown = f"{months} Month{'s' if months != 1 else ''}, {rem_days} Day{'s' if rem_days != 1 else ''} Remaining"
+        rem = days_left % 30
+        cd = f"{months} Month{'s' if months != 1 else ''}, {rem} Day{'s' if rem != 1 else ''} Remaining"
     else:
-        # 1..30 days
         d = max(1, days_left)
-        countdown = f"{d} Day{'s' if d != 1 else ''} Remaining"
-
+        cd = f"{d} Day{'s' if d != 1 else ''} Remaining"
     return {
         "time_left_days": days_left,
         "is_eligible": False,
         "status_label": "⏳ COUNTDOWN ACTIVE",
-        "countdown_display": countdown,
+        "countdown_display": cd,
     }
 
 
-def _to_public(doc: dict) -> CarPublic:
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _create_jwt(user_id: str, email: str) -> str:
+    payload = {
+        "sub": user_id,
+        "email": email,
+        "exp": datetime.now(timezone.utc) + timedelta(days=JWT_TTL_DAYS),
+        "iat": datetime.now(timezone.utc),
+    }
+    return jwt.encode(payload, os.environ["JWT_SECRET"], algorithm=JWT_ALGO)
+
+
+def _decode_jwt(token: str) -> dict:
+    return jwt.decode(token, os.environ["JWT_SECRET"], algorithms=[JWT_ALGO])
+
+
+async def get_current_user(request: Request) -> dict:
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = auth[7:]
+    try:
+        payload = _decode_jwt(token)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Session expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+
+async def get_optional_user(request: Request) -> Optional[dict]:
+    try:
+        return await get_current_user(request)
+    except HTTPException:
+        return None
+
+
+async def _sentiment_for_car(car_id: str, user: Optional[dict]) -> SentimentSummary:
+    pipeline = [
+        {"$match": {"car_id": car_id}},
+        {"$group": {"_id": "$sentiment", "count": {"$sum": 1}}},
+    ]
+    counts = {"buy": 0, "hold": 0, "sell": 0}
+    async for row in db.votes.aggregate(pipeline):
+        if row["_id"] in counts:
+            counts[row["_id"]] = row["count"]
+    total = sum(counts.values())
+    pct = {k: (round(counts[k] * 100 / total, 1) if total else 0.0) for k in counts}
+    user_vote = None
+    if user:
+        existing = await db.votes.find_one({"car_id": car_id, "user_id": user["id"]}, {"_id": 0, "sentiment": 1})
+        user_vote = existing["sentiment"] if existing else None
+    return SentimentSummary(
+        buy=counts["buy"], hold=counts["hold"], sell=counts["sell"],
+        total=total, buy_pct=pct["buy"], hold_pct=pct["hold"], sell_pct=pct["sell"],
+        user_vote=user_vote,
+    )
+
+
+def _to_public(doc: dict, sentiment: Optional[SentimentSummary] = None) -> CarPublic:
     base = Car(**doc)
-    status = _compute_status(base.vrt_freedom_date)
-    return CarPublic(**base.model_dump(), **status)
+    return CarPublic(**base.model_dump(), **_compute_status(base.vrt_freedom_date), sentiment=sentiment)
 
 
-# ---------- Seeding ----------
+# ------------------- Email (mock) -------------------
+async def send_magic_link_email(email: str, link: str) -> dict:
+    mode = os.environ.get("EMAIL_MODE", "mock").lower()
+    if mode == "mock":
+        logger.info(f"[MOCK EMAIL] Magic link for {email}: {link}")
+        return {"mode": "mock", "magic_link": link}
+    # Resend integration seam (not active until key configured)
+    return {"mode": mode, "magic_link": None}
+
+
+# ------------------- Seeding -------------------
 async def seed_vrt_registry():
-    """Load cars from cars_data.csv into Mongo if collection is empty."""
     count = await db.vrt_registry.count_documents({})
     if count > 0:
         logger.info(f"VRT_Registry already seeded ({count} cars)")
         return
-
     csv_path = ROOT_DIR / "cars_data.csv"
     if not csv_path.exists():
-        logger.warning("cars_data.csv not found, skipping seed")
         return
-
     docs = []
     with open(csv_path, newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            car_name = row["Car_Name"].strip()
-            raw_cat = row["Category"].strip()
-            mapped_cat = CATEGORY_MAP.get(raw_cat, raw_cat)
-            year = _extract_year(car_name)
-            launch_date = f"{year}-01-01"
-            vrt_date = row["VRT_Freedom_Date"].strip()
-            doc = Car(
-                car_name=car_name,
-                category=mapped_cat,
-                launch_date=launch_date,
-                vrt_freedom_date=vrt_date,
+        for row in csv.DictReader(f):
+            name = row["Car_Name"].strip()
+            cat = CATEGORY_MAP.get(row["Category"].strip(), row["Category"].strip())
+            docs.append(Car(
+                car_name=name,
+                category=cat,
+                launch_date=f"{_extract_year(name)}-01-01",
+                vrt_freedom_date=row["VRT_Freedom_Date"].strip(),
                 external_link=None,
-            ).model_dump()
-            docs.append(doc)
-
+            ).model_dump())
     if docs:
         await db.vrt_registry.insert_many(docs)
-        logger.info(f"Seeded {len(docs)} cars into VRT_Registry")
+        logger.info(f"Seeded {len(docs)} cars")
+
+
+async def ensure_indexes():
+    await db.users.create_index("email", unique=True)
+    await db.magic_links.create_index("expires_at", expireAfterSeconds=0)
+    await db.votes.create_index([("car_id", 1), ("user_id", 1)], unique=True)
+    await db.votes.create_index("car_id")
 
 
 @app.on_event("startup")
 async def on_startup():
+    await ensure_indexes()
     await seed_vrt_registry()
 
 
 @app.on_event("shutdown")
-async def shutdown_db_client():
+async def on_shutdown():
     client.close()
 
 
-# ---------- Endpoints ----------
+# ------------------- Endpoints: root + cars -------------------
 @api_router.get("/")
 async def root():
-    return {"message": "Sovereign Automotive API", "version": "1.0"}
+    return {"message": "Sovereign Automotive API", "version": "1.1"}
 
 
 @api_router.get("/cars", response_model=List[CarPublic])
-async def list_cars(
-    category: Optional[str] = Query(default=None, description="Filter by category"),
-    eligible_only: Optional[bool] = Query(default=None),
-):
-    query = {}
+async def list_cars(category: Optional[str] = Query(default=None)):
+    q = {}
     if category:
         if category not in ALLOWED_CATEGORIES:
             raise HTTPException(status_code=400, detail=f"Invalid category. Allowed: {ALLOWED_CATEGORIES}")
-        query["category"] = category
-
-    docs = await db.vrt_registry.find(query, {"_id": 0}).sort("vrt_freedom_date", 1).to_list(1000)
-    cars = [_to_public(d) for d in docs]
-
-    if eligible_only is True:
-        cars = [c for c in cars if c.is_eligible]
-    elif eligible_only is False:
-        cars = [c for c in cars if not c.is_eligible]
-
-    return cars
+        q["category"] = category
+    docs = await db.vrt_registry.find(q, {"_id": 0}).sort("vrt_freedom_date", 1).to_list(2000)
+    return [_to_public(d) for d in docs]
 
 
 @api_router.get("/cars/categories")
@@ -189,18 +269,109 @@ async def get_stats():
         "total": total,
         "eligible": eligible,
         "pending": total - eligible,
-        "by_category": {
-            cat: sum(1 for d in docs if d.get("category") == cat) for cat in ALLOWED_CATEGORIES
-        },
+        "by_category": {c: sum(1 for d in docs if d.get("category") == c) for c in ALLOWED_CATEGORIES},
     }
 
 
 @api_router.get("/cars/{car_id}", response_model=CarPublic)
-async def get_car(car_id: str):
+async def get_car(car_id: str, request: Request):
     doc = await db.vrt_registry.find_one({"id": car_id}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Car not found")
-    return _to_public(doc)
+    user = await get_optional_user(request)
+    sentiment = await _sentiment_for_car(car_id, user)
+    return _to_public(doc, sentiment)
+
+
+@api_router.get("/cars/{car_id}/sentiment", response_model=SentimentSummary)
+async def get_sentiment(car_id: str, request: Request):
+    doc = await db.vrt_registry.find_one({"id": car_id}, {"_id": 0, "id": 1})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Car not found")
+    user = await get_optional_user(request)
+    return await _sentiment_for_car(car_id, user)
+
+
+@api_router.post("/cars/{car_id}/vote", response_model=SentimentSummary)
+async def cast_vote(car_id: str, payload: VoteIn, user: dict = Depends(get_current_user)):
+    doc = await db.vrt_registry.find_one({"id": car_id}, {"_id": 0, "id": 1})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Car not found")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    await db.votes.update_one(
+        {"car_id": car_id, "user_id": user["id"]},
+        {
+            "$set": {"sentiment": payload.sentiment, "updated_at": now_iso},
+            "$setOnInsert": {"car_id": car_id, "user_id": user["id"], "created_at": now_iso},
+        },
+        upsert=True,
+    )
+    return await _sentiment_for_car(car_id, user)
+
+
+# ------------------- Endpoints: auth (magic link) -------------------
+@api_router.post("/auth/request-link")
+async def request_link(payload: RequestLinkIn):
+    email = payload.email.lower().strip()
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = _hash_token(raw_token)
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=MAGIC_TTL_MIN)
+    await db.magic_links.insert_one({
+        "email": email,
+        "token_hash": token_hash,
+        "expires_at": expires_at,
+        "used": False,
+        "created_at": datetime.now(timezone.utc),
+    })
+    frontend = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    link = f"{frontend}/auth/verify?token={raw_token}"
+    info = await send_magic_link_email(email, link)
+    resp = {"ok": True, "expires_in_minutes": MAGIC_TTL_MIN, "mode": info["mode"]}
+    if info["mode"] == "mock":
+        resp["magic_link"] = link  # dev convenience only
+    return resp
+
+
+@api_router.get("/auth/verify")
+async def verify_link(token: str):
+    token_hash = _hash_token(token)
+    doc = await db.magic_links.find_one({"token_hash": token_hash})
+    if not doc:
+        raise HTTPException(status_code=400, detail="Invalid or expired link")
+    if doc.get("used"):
+        raise HTTPException(status_code=400, detail="Link already used")
+    expires_at = doc["expires_at"]
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Link expired")
+
+    email = doc["email"]
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not user:
+        user = {
+            "id": str(uuid.uuid4()),
+            "email": email,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.users.insert_one(user.copy())
+
+    await db.magic_links.update_one({"_id": doc["_id"]}, {"$set": {"used": True, "used_at": datetime.now(timezone.utc).isoformat()}})
+
+    access_token = _create_jwt(user["id"], user["email"])
+    return {"access_token": access_token, "user": {"id": user["id"], "email": user["email"]}}
+
+
+@api_router.get("/auth/me")
+async def me(user: dict = Depends(get_current_user)):
+    return {"id": user["id"], "email": user["email"]}
+
+
+@api_router.post("/auth/logout")
+async def logout(user: dict = Depends(get_current_user)):
+    return {"ok": True}
 
 
 app.include_router(api_router)
