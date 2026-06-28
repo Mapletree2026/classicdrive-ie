@@ -1,0 +1,112 @@
+{
+  "theme": "dark",
+  "archetype": "4",
+  "archetype_description": "Swiss & High-Contrast (Motorsport / Performance Pro variant)",
+  "typography": {
+    "headings": {
+      "family": "Barlow Condensed",
+      "import_url": "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&display=swap",
+      "weights": ["700", "800", "900"],
+      "tracking": "tracking-normal",
+      "text_transform": "uppercase",
+      "usage": "Hero typography, Car Card Titles, Main Headers - gives a heavy-weight, authoritative automotive feel."
+    },
+    "body": {
+      "family": "Chivo",
+      "import_url": "https://fonts.googleapis.com/css2?family=Chivo:wght@400;500;700&display=swap",
+      "weights": ["400", "500"],
+      "usage": "General body text, descriptions, standard UI elements."
+    },
+    "mono": {
+      "family": "IBM Plex Mono",
+      "import_url": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&display=swap",
+      "weights": ["500", "600", "700"],
+      "usage": "Countdown timers, launch dates, metrics, telemetry data. Adds a technical 'timing board' feel."
+    }
+  },
+  "colors": {
+    "background": "#050505",
+    "surface": "#111111",
+    "surface_hover": "#1A1A1A",
+    "border": "rgba(255, 255, 255, 0.12)",
+    "text_primary": "#FFFFFF",
+    "text_secondary": "#888888",
+    "accent_countdown": "#FF5500",
+    "accent_eligible": "#00FF66",
+    "accent_brand": "#FFFFFF"
+  },
+  "spacing_and_layout": {
+    "general": "Dense, technical layout. Use generous padding inside containers but maintain sharp, un-rounded geometric edges (rounded-none).",
+    "grid": "Control Room Grid for the directory: grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4. Gap: gap-6. Grid items must stretch to fill height.",
+    "cards": "Sharp 1px solid borders (border-white/10), flat background (#111111), no drop shadows. Inside padding p-5 or p-6."
+  },
+  "components": {
+    "header": {
+      "style": "Sticky top (z-50), Solid Background (#050505) with a hard bottom border (1px border-white/10). No blur, pure contrast.",
+      "elements": "Contains Brand Logo (Left) and the Category Segmented Control (Center/Right)."
+    },
+    "segmented_control": {
+      "style": "Sharp edges (rounded-none), 1px border-white/20, p-1 bg-[#111111].",
+      "active_state": "bg-white text-black font-bold shadow-none",
+      "inactive_state": "text-white/60 hover:text-white hover:bg-white/5",
+      "usage": "Category toggle between 'Performance / JDM' and 'Everyday / Euro Classic'."
+    },
+    "car_card": {
+      "layout": "Vertical flex layout (flex-col). Height: h-full. Top: Image slot (h-48 object-cover). Middle: Car_Name (Barlow Condensed text-2xl uppercase), Category (Chivo text-xs text-white/50), Launch_Date. Bottom: Status Badge + Countdown.",
+      "interactions": "Hover state: border-white/30, slight background lighten (bg-[#1A1A1A]), image scale slightly."
+    },
+    "status_badge": {
+      "eligible": "bg-[#00FF66]/10 text-[#00FF66] border border-[#00FF66]/30 px-2 py-1 text-xs font-bold uppercase rounded-none w-fit inline-flex items-center gap-1",
+      "active": "bg-[#FF5500]/10 text-[#FF5500] border border-[#FF5500]/30 px-2 py-1 text-xs font-bold uppercase rounded-none w-fit inline-flex items-center gap-1"
+    },
+    "countdown_display": {
+      "font": "IBM Plex Mono",
+      "format_greater_than_30": "text-sm text-white/80",
+      "format_less_than_30": "text-base font-bold text-[#FF5500]",
+      "layout": "Positioned below the active badge, prominent timing board style."
+    }
+  },
+  "motion": {
+    "hover": "Mechanical, instant or very fast transitions (duration-150 ease-out).",
+    "entrance": "Staggered fade-up for directory grid items to feel like a dashboard booting up."
+  },
+  "image_urls": {
+    "hero_background": {
+      "url": "https://images.unsplash.com/photo-1703929755159-a1a8835a0536?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxfHxjaGVja2VyZWQlMjBmbGFnJTIwbW90b3JzcG9ydCUyMHRleHR1cmV8ZW58MHx8fHwxNzgyNjM1MDIyfDA&ixlib=rb-4.1.0&q=85",
+      "description": "Checkered fabric texture for very subtle background opacity (e.g., opacity-5) in hero/header section.",
+      "category": "background"
+    },
+    "placeholder_jdm": {
+      "url": "https://images.unsplash.com/photo-1550242499-b5171f56de56",
+      "description": "White JDM passing through streets.",
+      "category": "car_image"
+    },
+    "placeholder_jdm_2": {
+      "url": "https://images.unsplash.com/photo-1606590526474-b07bb3623ad1",
+      "description": "Black sports car in dark room.",
+      "category": "car_image"
+    },
+    "placeholder_euro_1": {
+      "url": "https://images.unsplash.com/photo-1690306657598-4892ed679499?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwyfHxjbGFzc2ljJTIwcG9yc2NoZSUyMGV1cm8lMjBjYXIlMjBkYXJrfGVufDB8fHx8MTc4MjYzNTAyMXww&ixlib=rb-4.1.0&q=85",
+      "description": "Classic Porsche parked in garage.",
+      "category": "car_image"
+    },
+    "placeholder_euro_2": {
+      "url": "https://images.unsplash.com/photo-1689589079779-d442bba9ef97?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHw0fHxjbGFzc2ljJTIwcG9yc2NoZSUyMGV1cm8lMjBjYXIlMjBkYXJrfGVufDB8fHx8MTc4MjYzNTAyMXww&ixlib=rb-4.1.0&q=85",
+      "description": "Green sports car parked in the dark.",
+      "category": "car_image"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Build the directory application using React and Tailwind CSS.",
+    "Mock a primary database 'VRT_Registry' with approx 12-20 items for demonstration, containing: ID, Car_Name, Category, Launch_Date, VRT_Freedom_Date, External_Link.",
+    "Implement a mobile-first responsive grid for the car cards (grid-cols-1 on mobile, up to grid-cols-4 on XL screens).",
+    "In the sticky nav header, implement the category toggle ('Performance / JDM' vs 'Everyday / Euro Classic') as a custom segmented control. DO NOT use a standard dropdown. It should visually look like a toggle switch/tab bar with sharp edges.",
+    "Calculate 'Time_Left' dynamically (VRT_Freedom_Date - now).",
+    "If Time_Left <= 0: Show the green badge '👑 €200 FLAT VRT ELIGIBLE' and HIDE the countdown.",
+    "If Time_Left > 0: Show the amber badge '⏳ COUNTDOWN ACTIVE'. Below it, format countdown: If >30 days, display 'X Months, Y Days Remaining'. If <= 30 days, display 'X Days Remaining' in bold.",
+    "Typography: Import and apply 'Barlow Condensed' for headings/car names, 'IBM Plex Mono' for countdowns/metrics, and 'Chivo' for body text. All fonts are available on Google Fonts.",
+    "Aesthetic: Maintain a stark, high-contrast 'Motorsport Editorial' look. Use deep black backgrounds (#050505), sharp borders (rounded-none), and high contrast white text. Avoid all gradients, drop shadows, and soft UI elements.",
+    "Ensure all interactive elements (buttons, segmented controls, car links) have 'data-testid' attributes (e.g., data-testid='category-toggle-jdm')."
+  ]
+}
