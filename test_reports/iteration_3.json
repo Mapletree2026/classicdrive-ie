@@ -1,0 +1,40 @@
+{
+  "summary": "Regression QA before staging — directory list+filter, VRT badge math, detail routing. All 11 requested checks passed on backend and frontend. Seed cleanup verified (count stayed at 188).",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "passed": [
+    "GET /api/ -> version 1.1",
+    "GET /api/cars -> 188 cars; ?category=Performance / JDM -> 100; ?category=Everyday / Euro Classic -> 88; ?category=garbage -> 400",
+    "GET /api/cars/stats -> {total:188, eligible:188, pending:0, by_category:{Performance / JDM:100, Everyday / Euro Classic:88}}",
+    "Every seeded car (188/188) returns is_eligible=true, status_label='👑 €200 FLAT VRT ELIGIBLE', countdown_display=null, time_left_days=0",
+    "Boundary FAR (+365d) -> is_eligible=false, status_label='⏳ COUNTDOWN ACTIVE', countdown_display='12 Months, 4 Days Remaining' (correct 'X Months, Y Days Remaining' format)",
+    "Boundary NEAR (+10d) -> is_eligible=false, countdown_display='9 Days Remaining' (correct 'X Day(s) Remaining' format; integer-day truncation from insertion-to-request latency caused 10→9, not a bug)",
+    "Temp cars deleted; vrt_registry.count_documents == 188 post-cleanup",
+    "GET /api/cars/{valid_id} returns CarPublic with sentiment field embedded; GET /api/cars/does-not-exist returns 404",
+    "Frontend / loads, header sticky+visible, default tab Performance/JDM shows TOTAL=100 ELIGIBLE=100, switching to Everyday/Euro Classic shows 88/88",
+    "StatBar shows VEHICLES TRACKED 188 / VRT ELIGIBLE NOW 188 / COUNTDOWN ACTIVE 0",
+    "100 badge-eligible elements on JDM grid, 0 badge-active, 0 countdown-display elements",
+    "Click car card -> /car/{id} renders detail-car-name, detail-category, detail-badge-eligible, sentiment-section; detail-back-link returns to /",
+    "Deep link /car/{valid_id} renders detail page; /car/does-not-exist shows detail-error",
+    "Mobile 390x800: cars-grid is single column (grid width == card width 342px) and category-toggle-mobile visible",
+    "/auth/verify with no token renders 'MISSING TOKEN' gracefully (no crash, no uncaught console errors)"
+  ],
+  "failed": [],
+  "observations": [
+    {
+      "area": "boundary countdown precision",
+      "note": "Inserting a car at +10 days and immediately fetching returns '9 Days Remaining' due to timedelta.days integer truncation (seconds of elapsed time between insert and request). Format and logic are spec-compliant; only the exact integer day count drifts by 1 at the very edge. Not a blocker.",
+      "priority": "LOW"
+    },
+    {
+      "area": "console 404s",
+      "note": "Two 404 console errors observed are the expected /api/cars/does-not-exist fetch from the bogus deep-link test itself. Directory load and valid detail load produce zero console errors.",
+      "priority": "INFO"
+    }
+  ],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "mocked_apis": ["EMAIL_MODE=mock (intentional, not tested in this regression pass)"],
+  "test_credentials": "Not required for regression scope (auth/voting already verified in iteration_2)"
+}
