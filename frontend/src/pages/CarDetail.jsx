@@ -4,6 +4,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import LoginDialog from "@/components/LoginDialog";
 import SourcingSection from "@/components/SourcingSection";
+import NotifyWidget from "@/components/NotifyWidget";
 import { ArrowLeft, ExternalLink, TrendingUp, Minus, TrendingDown, Lock, Timer } from "lucide-react";
 
 function formatDate(iso) {
@@ -150,6 +151,14 @@ export default function CarDetail() {
                         </div>
                     )}
                 </section>
+
+                {!car.is_eligible && (
+                    <NotifyWidget
+                        carId={car.id}
+                        carName={car.car_name}
+                        countdownDisplay={car.countdown_display}
+                    />
+                )}
 
                 <SourcingSection carName={car.car_name} category={car.category} />
             </div>

@@ -32,6 +32,7 @@ Initialize a full-stack, mobile-responsive web application (originally "Sovereig
 - Frontend: `AuthProvider` + `LoginDialog` modal with dev-mode magic link display, `AuthVerify` page, user menu with email + logout in header.
 - Affiliate sourcing links with UTM tags (DoneDeal, Carzone, AutoTrader UK, Goo-net), Trending market sentiment ticker, "Suggest a Car" form, Year filter.
 - **Iteration 7 (2026-02):** Heritage Light theme (British Racing Green on cream), rebranded Sovereign Auto → RetroDrive.ie → **ClassicDrive.ie**. Custom domain `classicdrive.ie` secured. Code pushed to public GitHub: https://github.com/Mapletree2026/retrodrive-ie. Sanity scan confirmed `.env` files correctly gitignored (HTTP 404 on GitHub raw), no secrets leaked.
+- **Iteration 8 (2026-02):** VRT Freedom Alert email-capture widget on car detail pages. New collection `vrt_notifications` with unique `(car_id, email)` index. Endpoints `POST /api/cars/{id}/notify` (idempotent upsert; rejects already-eligible cars with 400 and unknown cars with 404) and `GET /api/cars/{id}/notify/count`. Widget renders only when `!car.is_eligible`, shows live watcher count, countdown badge, and green success state on subscribe.
 - 100% backend + frontend tests pass (iterations 1–6)
 
 ## Personas

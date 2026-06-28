@@ -88,6 +88,10 @@ class VoteIn(BaseModel):
     sentiment: Literal["buy", "hold", "sell"]
 
 
+class NotifyIn(BaseModel):
+    email: EmailStr
+
+
 # ------------------- Helpers -------------------
 def _extract_year(name: str) -> int:
     m = re.match(r"\s*(\d{4})", name)
@@ -232,6 +236,8 @@ async def ensure_indexes():
     await db.magic_links.create_index("expires_at", expireAfterSeconds=0)
     await db.votes.create_index([("car_id", 1), ("user_id", 1)], unique=True)
     await db.votes.create_index("car_id")
+    await db.vrt_notifications.create_index([("car_id", 1), ("email", 1)], unique=True)
+    await db.vrt_notifications.create_index("car_id")
 
 
 @app.on_event("startup")
@@ -355,6 +361,48 @@ async def cast_vote(car_id: str, payload: VoteIn, user: dict = Depends(get_curre
         upsert=True,
     )
     return await _sentiment_for_car(car_id, user)
+
+
+# ------------------- Endpoints: VRT freedom notifications -------------------
+@api_router.post("/cars/{car_id}/notify")
+async def notify_when_eligible(car_id: str, payload: NotifyIn):
+    doc = await db.vrt_registry.find_one({"id": car_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Car not found")
+    status = _compute_status(doc["vrt_freedom_date"])
+    if status["is_eligible"]:
+        raise HTTPException(status_code=400, detail="This vehicle is already VRT-eligible")
+    email = payload.email.lower().strip()
+    now_iso = datetime.now(timezone.utc).isoformat()
+    result = await db.vrt_notifications.update_one(
+        {"car_id": car_id, "email": email},
+        {
+            "$setOnInsert": {
+                "id": str(uuid.uuid4()),
+                "car_id": car_id,
+                "email": email,
+                "created_at": now_iso,
+                "notified_at": None,
+            }
+        },
+        upsert=True,
+    )
+    total = await db.vrt_notifications.count_documents({"car_id": car_id})
+    return {
+        "ok": True,
+        "already_subscribed": result.upserted_id is None,
+        "watchers": total,
+        "vrt_freedom_date": doc["vrt_freedom_date"],
+    }
+
+
+@api_router.get("/cars/{car_id}/notify/count")
+async def notify_count(car_id: str):
+    doc = await db.vrt_registry.find_one({"id": car_id}, {"_id": 0, "id": 1})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Car not found")
+    total = await db.vrt_notifications.count_documents({"car_id": car_id})
+    return {"watchers": total}
 
 
 # ------------------- Endpoints: auth (magic link) -------------------
