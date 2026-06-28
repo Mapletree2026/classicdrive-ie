@@ -1,0 +1,33 @@
+{
+  "summary": "Verified vercel.json bug fix (rootDirectory removal). Created /app/backend/tests/test_vercel_config.py with 9 regression assertions covering: file location, JSON validity, absence of rootDirectory key/string, installCommand/buildCommand scoping into frontend/, outputDirectory=frontend/build, framework=create-react-app, github.silent preserved, immutable cache header preserved, and frontend build script intact. All 9 tests pass. Also ran the actual build pipeline (cd /app/frontend && yarn build) to confirm no regression — built successfully in 28.95s and produced /app/frontend/build/index.html plus static/js/main.*.js bundles. Bug fix verified end-to-end.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_vercel_config.py",
+    "/app/test_reports/pytest/vercel_config_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "vercel.json is clean: framework=create-react-app, installCommand='cd frontend && yarn install --frozen-lockfile', buildCommand='cd frontend && yarn build', outputDirectory='frontend/build'. The schema-rejected rootDirectory property is fully removed (verified both via JSON-key check and full-text scan).",
+    "Cache-Control immutable header for /static/(.*) preserved with max-age=31536000.",
+    "github.silent preserved as true.",
+    "File is at repo root /app/vercel.json (not inside /app/frontend/), as required by Vercel."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_vercel_config.py (new test file)"
+  ],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "N/A (config-only fix)"},
+  "test_credentials": "N/A",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "vercel.json is verified clean and the production build pipeline (cd frontend && yarn build) works. Regression suite lives at /app/backend/tests/test_vercel_config.py and can be re-run anytime via: pytest /app/backend/tests/test_vercel_config.py -v.",
+  "rca of the issue": "RCA: Vercel's vercel.json schema (https://openapi.vercel.sh/vercel.json) does not permit the `rootDirectory` property — that setting is dashboard-only. Previously the file used `rootDirectory: \"frontend\"` to point Vercel at the React subdir, which caused the deploy to fail schema validation. Fix: removed rootDirectory and instead scoped each command into the subdir contextually: installCommand and buildCommand now begin with `cd frontend &&`, and outputDirectory is set to the relative path `frontend/build`. Reproduction (pre-fix): deploy with rootDirectory present → Vercel schema validator rejects build. Mitigation (post-fix): all schema-legal keys; verified by 9 unit assertions and a successful local yarn build producing build/index.html."
+}
