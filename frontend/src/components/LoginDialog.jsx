@@ -43,15 +43,15 @@ export default function LoginDialog({ open, onOpenChange }) {
             }}
         >
             <DialogContent
-                className="bg-[#0a0a0a] border border-white/15 rounded-none text-white max-w-md p-0"
+                className="bg-[color:var(--sa-surface)] border border-[color:var(--sa-border-strong)] rounded-none text-[color:var(--sa-text)] max-w-md p-0"
                 data-testid="login-dialog"
             >
-                <div className="border-b border-white/10 px-6 py-5">
+                <div className="border-b border-[color:var(--sa-border)] px-6 py-5">
                     <DialogHeader>
-                        <DialogTitle className="font-heading font-black text-2xl uppercase tracking-wide">
+                        <DialogTitle className="font-heading font-black text-2xl uppercase tracking-wide text-[color:var(--sa-brg)]">
                             Sign in
                         </DialogTitle>
-                        <DialogDescription className="font-mono-tech text-xs text-white/50 mt-1">
+                        <DialogDescription className="font-mono-tech text-xs text-[color:var(--sa-text-2)] mt-1">
                             EMAIL MAGIC LINK · NO PASSWORD
                         </DialogDescription>
                     </DialogHeader>
@@ -62,15 +62,15 @@ export default function LoginDialog({ open, onOpenChange }) {
                         <form onSubmit={onSubmit} className="space-y-4" data-testid="login-form">
                             <label className="block">
                                 <span className="font-mono-tech text-[10px] text-white/40 tracking-widest">EMAIL</span>
-                                <div className="flex items-center gap-2 border border-white/15 bg-[#050505] px-3 h-11 mt-2">
-                                    <Mail size={14} className="text-white/40" />
+                                <div className="flex items-center gap-2 border border-[color:var(--sa-border-strong)] bg-[color:var(--sa-surface-2)] px-3 h-11 mt-2">
+                                    <Mail size={14} className="text-[color:var(--sa-text-2)]" />
                                     <input
                                         type="email"
                                         required
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="you@example.com"
-                                        className="bg-transparent outline-none font-mono-tech text-sm text-white placeholder:text-white/30 w-full"
+                                        className="bg-transparent outline-none font-mono-tech text-sm text-[color:var(--sa-text)] placeholder:text-[color:var(--sa-text-2)] w-full"
                                         data-testid="login-email-input"
                                         autoFocus
                                     />
@@ -84,7 +84,7 @@ export default function LoginDialog({ open, onOpenChange }) {
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="w-full h-11 bg-white text-black font-heading font-bold uppercase text-sm hover:bg-white/90 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                                className="w-full h-11 bg-[color:var(--sa-brg)] text-[color:var(--sa-bg)] font-heading font-bold uppercase text-sm hover:bg-[color:var(--sa-brg-2)] disabled:opacity-50 inline-flex items-center justify-center gap-2"
                                 data-testid="login-submit-button"
                             >
                                 {submitting && <Loader2 size={14} className="animate-spin" />}

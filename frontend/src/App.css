@@ -1,6 +1,1 @@
-/* Sovereign Automotive – component scoped styles */
-.App {
-    min-height: 100vh;
-    background: var(--sa-bg);
-    color: var(--sa-text);
-}
+.App { min-height: 100vh; background: var(--sa-bg); color: var(--sa-text); }

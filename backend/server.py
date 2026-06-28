@@ -260,6 +260,47 @@ async def get_categories():
     return {"categories": ALLOWED_CATEGORIES}
 
 
+@api_router.get("/cars/trending")
+async def get_trending(limit: int = 8):
+    """Top cars by total vote count with sentiment breakdown."""
+    pipeline = [
+        {"$group": {"_id": "$car_id",
+                    "total": {"$sum": 1},
+                    "buy": {"$sum": {"$cond": [{"$eq": ["$sentiment", "buy"]}, 1, 0]}},
+                    "hold": {"$sum": {"$cond": [{"$eq": ["$sentiment", "hold"]}, 1, 0]}},
+                    "sell": {"$sum": {"$cond": [{"$eq": ["$sentiment", "sell"]}, 1, 0]}}}},
+        {"$sort": {"total": -1}},
+        {"$limit": max(1, min(50, limit))},
+    ]
+    rows = [r async for r in db.votes.aggregate(pipeline)]
+    out = []
+    for r in rows:
+        car = await db.vrt_registry.find_one({"id": r["_id"]}, {"_id": 0})
+        if not car:
+            continue
+        t = r["total"] or 1
+        out.append({
+            "car_id": r["_id"],
+            "car_name": car["car_name"],
+            "category": car["category"],
+            "total": r["total"],
+            "buy_pct": round(r["buy"] * 100 / t, 1),
+            "hold_pct": round(r["hold"] * 100 / t, 1),
+            "sell_pct": round(r["sell"] * 100 / t, 1),
+        })
+    # If fewer than `limit` cars have any votes, pad with random recent cars so the
+    # ticker is never empty at launch.
+    if len(out) < limit:
+        existing = {x["car_id"] for x in out}
+        extra = await db.vrt_registry.find({"id": {"$nin": list(existing)}}, {"_id": 0}).limit(limit - len(out)).to_list(limit)
+        for car in extra:
+            out.append({
+                "car_id": car["id"], "car_name": car["car_name"], "category": car["category"],
+                "total": 0, "buy_pct": 0.0, "hold_pct": 0.0, "sell_pct": 0.0,
+            })
+    return out
+
+
 @api_router.get("/cars/stats")
 async def get_stats():
     docs = await db.vrt_registry.find({}, {"_id": 0}).to_list(2000)

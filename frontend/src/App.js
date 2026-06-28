@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 function App() {
     return (
-        <div className="App bg-grain">
+        <div className="App bg-paper">
             <AuthProvider>
                 <BrowserRouter>
                     <Routes>

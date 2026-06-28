@@ -4,21 +4,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Heritage Light Theme — Sovereign Automotive */
 :root {
-    --sa-bg: #050505;
-    --sa-surface: #111111;
-    --sa-surface-hover: #1a1a1a;
-    --sa-border: rgba(255, 255, 255, 0.12);
-    --sa-text: #ffffff;
-    --sa-text-dim: #888888;
-    --sa-eligible: #00ff66;
-    --sa-active: #ff5500;
+    --sa-bg: #F9F9F6;            /* off-white cream */
+    --sa-surface: #FFFFFF;        /* card */
+    --sa-surface-2: #F1F0EA;      /* subtle inset */
+    --sa-border: rgba(11, 49, 37, 0.12);
+    --sa-border-strong: rgba(11, 49, 37, 0.28);
+    --sa-text: #0B3125;           /* British Racing Green */
+    --sa-text-2: #5C6F66;         /* muted */
+    --sa-brg: #0B3125;            /* primary brand */
+    --sa-brg-2: #145941;          /* hover/secondary */
+    --sa-amber: #D97706;          /* motorsport amber (countdown urgency) */
+    --sa-amber-soft: #FFF4E0;
+    --sa-eligible: #1B7A3A;       /* heritage green */
+    --sa-eligible-soft: #E6F4EC;
+    --sa-sell: #B33A2A;           /* heritage red */
+    --sa-sell-soft: #FBEAE6;
+    --sa-hold: #C8801A;
+    --sa-hold-soft: #FBEFD9;
+    --sa-buy: #1B7A3A;
+    --sa-buy-soft: #E6F4EC;
 }
 
-* {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
+* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
 body {
     margin: 0;
@@ -27,76 +36,71 @@ body {
     font-family: 'Chivo', system-ui, -apple-system, sans-serif;
 }
 
-.font-heading {
-    font-family: 'Barlow Condensed', sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0;
-}
+.font-heading { font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; }
+.font-mono-tech { font-family: 'IBM Plex Mono', monospace; }
 
-.font-mono-tech {
-    font-family: 'IBM Plex Mono', monospace;
-}
-
-/* Subtle grain overlay */
-.bg-grain::before {
+/* subtle paper grain for heritage feel */
+.bg-paper::before {
     content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0.04;
-    background-image:
-        radial-gradient(rgba(255, 255, 255, 0.6) 1px, transparent 1px);
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    opacity: 0.05;
+    background-image: radial-gradient(rgba(11,49,37,0.6) 1px, transparent 1px);
     background-size: 3px 3px;
 }
 
-/* Staggered fade-in for grid items */
 @keyframes sa-fade-up {
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
 }
+.sa-fade-up { animation: sa-fade-up 0.35s ease-out both; }
 
-.sa-fade-up {
-    animation: sa-fade-up 0.35s ease-out both;
-}
-
-/* Marquee for hero ticker */
 @keyframes sa-marquee {
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }
 }
+.sa-marquee { animation: sa-marquee 50s linear infinite; }
+.sa-marquee-fast { animation: sa-marquee 35s linear infinite; }
 
-.sa-marquee {
-    animation: sa-marquee 60s linear infinite;
+/* Stopwatch pulse for countdown badges */
+@keyframes sa-pulse-amber {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.35); }
+    50% { box-shadow: 0 0 0 8px rgba(217, 119, 6, 0); }
+}
+.sa-stopwatch { animation: sa-pulse-amber 1.8s ease-out infinite; }
+
+/* High-contrast premium progress (used in sentiment bars) */
+.sa-progress-track {
+    background: var(--sa-surface-2);
+    border: 1px solid var(--sa-border);
+    overflow: hidden;
+}
+.sa-progress-fill {
+    height: 100%;
+    transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
+    background-image: linear-gradient(90deg, currentColor 0%, currentColor 70%, rgba(255,255,255,0.35) 100%);
 }
 
 @layer base {
     :root {
-        --background: 0 0% 2%;
-        --foreground: 0 0% 100%;
-        --card: 0 0% 7%;
-        --card-foreground: 0 0% 100%;
-        --popover: 0 0% 7%;
-        --popover-foreground: 0 0% 100%;
-        --primary: 0 0% 100%;
-        --primary-foreground: 0 0% 0%;
-        --secondary: 0 0% 10%;
-        --secondary-foreground: 0 0% 100%;
-        --muted: 0 0% 10%;
-        --muted-foreground: 0 0% 60%;
-        --accent: 0 0% 12%;
-        --accent-foreground: 0 0% 100%;
-        --destructive: 14 100% 50%;
+        --background: 60 14% 97%;
+        --foreground: 159 64% 12%;
+        --card: 0 0% 100%;
+        --card-foreground: 159 64% 12%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 159 64% 12%;
+        --primary: 159 64% 12%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 60 14% 93%;
+        --secondary-foreground: 159 64% 12%;
+        --muted: 60 14% 93%;
+        --muted-foreground: 152 9% 40%;
+        --accent: 60 14% 93%;
+        --accent-foreground: 159 64% 12%;
+        --destructive: 9 64% 43%;
         --destructive-foreground: 0 0% 100%;
-        --border: 0 0% 14%;
-        --input: 0 0% 14%;
-        --ring: 0 0% 80%;
+        --border: 159 64% 12% / 0.12;
+        --input: 159 64% 12% / 0.12;
+        --ring: 159 64% 12%;
         --radius: 0;
     }
 }

@@ -1,0 +1,30 @@
+{
+  "summary": "Iteration 6 heritage light reskin + new trending ticker validated end-to-end. Backend /api/cars/stats and new /api/cars/trending both healthy. Directory renders bg-paper light theme with trending ticker (20 items, marquee), stat-bar 188/188/0, default 100 JDM cards each with green badge-eligible (0 badge-active), euro toggle yields 88 cards. Detail page shows British Racing Green car name (rgb(11,49,37)), premium sentiment-stacked-bar with 3 sa-progress-fill children, all 3 vote buttons, 8 sourcing links each containing all 3 UTM params (utm_source=sovereign_auto, utm_medium=affiliate, utm_campaign=vrt_sourcing). Mock magic-link login works (login-dev-magic-link returned), magic-link consume succeeds, authenticated vote-button-buy updates buy_pct from 0% -> 33.3%, switching to vote-button-sell upserts (sell_pct 100%, total unchanged = no duplicate). Mobile 390x800 ticker visible and no horizontal overflow on directory or detail. No console errors during authenticated flow.",
+  "tested_scope": ["backend", "frontend", "auth", "integration"],
+  "passed": [
+    "GET /api/cars/stats -> {total:188, eligible:188, by_category:{Performance/JDM:100, Everyday/Euro Classic:88}}",
+    "GET /api/cars/trending?limit=8 returns 8 items with required keys (car_id, car_name, category, total, buy_pct, hold_pct, sell_pct)",
+    "GET /api/cars/trending?limit=15 returns 15 items (padded from 188 catalog)",
+    "Directory body bg = rgb(249,249,246) (bg-paper / #F9F9F6)",
+    "trending-ticker rendered with 20 ticker-item-* elements (marquee duplication)",
+    "Clicking a ticker item navigates to /car/{id} detail page (force-click required due to marquee animation)",
+    "stat-bar shows VEHICLES TRACKED 188 / VRT ELIGIBLE NOW 188 / COUNTDOWN ACTIVE 0",
+    "Default JDM tab shows 100 car cards; category-toggle-euro switches to 88",
+    "100 cards display badge-eligible, 0 cards display badge-active",
+    "detail-car-name color = rgb(11,49,37) (British Racing Green #0B3125)",
+    "sentiment-section contains sentiment-stacked-bar with exactly 3 sa-progress-fill child divs",
+    "vote-button-buy/hold/sell all render with color-coded styling",
+    "sourcing-section present, 8 sourcing-link-* items, ALL hrefs contain utm_source=sovereign_auto, utm_medium=affiliate, utm_campaign=vrt_sourcing",
+    "header-login-button opens login-dialog (light/white surface)",
+    "Magic-link request returns login-dev-magic-link with dev href; consuming logs user in",
+    "Authenticated vote: buy_pct 0.0% -> 33.3% without reload; switching to sell -> sell 100% with total unchanged (upsert, no duplicate)",
+    "Mobile 390x800: trending-ticker visible, no horizontal overflow on directory or car detail",
+    "No console errors during authenticated voting flow"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "Initial unauthenticated probe surfaced 3x 400s on /vote (expected — auth-gated). Vote selectors are vote-{key}-pct (not sentiment-{key}-pct); corrected during testing. Ticker marquee animation requires force=True click in Playwright (UX itself fine for real users)."
+}
