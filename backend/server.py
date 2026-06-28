@@ -77,6 +77,13 @@ class RequestLinkIn(BaseModel):
     email: EmailStr
 
 
+class SuggestionIn(BaseModel):
+    car_name: str = Field(min_length=2, max_length=120)
+    category: Optional[str] = Field(default=None, max_length=40)
+    notes: Optional[str] = Field(default=None, max_length=500)
+    email: Optional[EmailStr] = None
+
+
 class VoteIn(BaseModel):
     sentiment: Literal["buy", "hold", "sell"]
 
@@ -413,6 +420,27 @@ async def me(user: dict = Depends(get_current_user)):
 @api_router.post("/auth/logout")
 async def logout(user: dict = Depends(get_current_user)):
     return {"ok": True}
+
+
+# ------------------- Endpoints: suggestions -------------------
+@api_router.post("/suggestions")
+async def submit_suggestion(payload: SuggestionIn):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "car_name": payload.car_name.strip(),
+        "category": (payload.category or "").strip() or None,
+        "notes": (payload.notes or "").strip() or None,
+        "email": payload.email.lower() if payload.email else None,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.suggestions.insert_one(doc)
+    return {"ok": True, "id": doc["id"]}
+
+
+@api_router.get("/suggestions/count")
+async def suggestions_count():
+    return {"total": await db.suggestions.count_documents({})}
 
 
 app.include_router(api_router)
