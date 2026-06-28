@@ -1,0 +1,26 @@
+{
+  "summary": "Sovereign Automotive first-finish smoke test passed on both backend and frontend. All 188 cars seeded; category filtering, stats, computed status fields, and UI behaviour (toggle, search, mobile responsive, stat bar, eligible badges) verified.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "passed": [
+    "GET /api/cars returns 188 cars with all required fields (id, car_name, category, launch_date, vrt_freedom_date, time_left_days, is_eligible, status_label, countdown_display)",
+    "GET /api/cars?category=Performance / JDM returns 100 cars, all with category 'Performance / JDM'",
+    "GET /api/cars?category=Everyday / Euro Classic returns 88 cars, all with category 'Everyday / Euro Classic'",
+    "GET /api/cars?category=invalid returns HTTP 400",
+    "GET /api/cars/{unknown} returns HTTP 404",
+    "GET /api/cars/stats -> {total:188, eligible:188, pending:0, by_category:{JDM:100, Euro:88}}",
+    "Computed status verified: every car is_eligible=true, status_label='👑 €200 FLAT VRT ELIGIBLE', countdown_display=null (all past dates)",
+    "Frontend loads at /, brand 'SOVEREIGN AUTOMOTIVE' visible, hero 'Thirty years. Two hundred euro. One registry.' rendered",
+    "Default active category is 'Performance / JDM', cars-grid renders 100 cards with eligible badges",
+    "Clicking category-toggle-euro switches to 'Everyday / Euro Classic' and grid updates to 88 cards (white bg active state visible)",
+    "StatBar shows VEHICLES TRACKED 188, VRT ELIGIBLE NOW 188 (green), COUNTDOWN ACTIVE 0 (orange)",
+    "All 100 visible cards show data-testid='badge-eligible' green badge",
+    "search-input filters client-side: 'Porsche' on Euro narrows to 18 cards",
+    "Mobile (390px) viewport: category-toggle-mobile is visible; layout switches to single column"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "Countdown/active-badge visual states could not be tested with current seed (all dates historical). Per spec this is expected; _compute_status logic was code-reviewed and matches requirements (>30 days -> 'X Months, Y Days Remaining'; <=30 days -> bold 'X Days Remaining'; <=0 -> eligible)."
+}
