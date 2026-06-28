@@ -328,6 +328,65 @@ async def get_stats():
     }
 
 
+@api_router.get("/cars/most-watched")
+async def most_watched(limit: int = 8):
+    """Top pending cars by subscriber count (watchers desc, then closest freedom date)."""
+    limit = max(1, min(24, limit))
+    pipeline = [{"$group": {"_id": "$car_id", "watchers": {"$sum": 1}}}]
+    counts = {}
+    async for row in db.vrt_notifications.aggregate(pipeline):
+        counts[row["_id"]] = row["watchers"]
+
+    out = []
+    seen = set()
+    if counts:
+        ids_sorted = sorted(counts.keys(), key=lambda k: -counts[k])
+        cars = await db.vrt_registry.find({"id": {"$in": ids_sorted}}, {"_id": 0}).to_list(2000)
+        car_by_id = {c["id"]: c for c in cars}
+        scored = []
+        for cid in ids_sorted:
+            car = car_by_id.get(cid)
+            if not car:
+                continue
+            status = _compute_status(car["vrt_freedom_date"])
+            if status["is_eligible"]:
+                continue
+            scored.append((counts[cid], car["vrt_freedom_date"], car, status))
+        scored.sort(key=lambda t: (-t[0], t[1]))
+        for w, _, car, status in scored[:limit]:
+            seen.add(car["id"])
+            out.append({
+                "id": car["id"],
+                "car_name": car["car_name"],
+                "category": car["category"],
+                "vrt_freedom_date": car["vrt_freedom_date"],
+                "watchers": w,
+                **status,
+            })
+
+    if len(out) < limit:
+        pending_docs = await db.vrt_registry.find(
+            {"id": {"$nin": list(seen)}},
+            {"_id": 0},
+        ).sort("vrt_freedom_date", 1).to_list(2000)
+        for car in pending_docs:
+            if len(out) >= limit:
+                break
+            status = _compute_status(car["vrt_freedom_date"])
+            if status["is_eligible"]:
+                continue
+            out.append({
+                "id": car["id"],
+                "car_name": car["car_name"],
+                "category": car["category"],
+                "vrt_freedom_date": car["vrt_freedom_date"],
+                "watchers": 0,
+                **status,
+            })
+    return out
+
+
+
 @api_router.get("/cars/{car_id}", response_model=CarPublic)
 async def get_car(car_id: str, request: Request):
     doc = await db.vrt_registry.find_one({"id": car_id}, {"_id": 0})

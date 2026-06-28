@@ -1,28 +1,17 @@
 # ClassicDrive.ie — Phase 2 Backlog
 
-Locked-in sprint board for the next iteration. Last shipped: **2026-02** (217-car registry, VRT Freedom Alert widget, ClassicDrive.ie rebrand).
+Locked-in sprint board. ✅ **P0 shipped 2026-02** — "Most-Watched Releases" carousel is live on the homepage.
 
 ---
 
-## 🔥 P0 — Headline Feature
+## ✅ P0 — SHIPPED (2026-02)
 
 ### "Most-Watched 2027 Releases" carousel on homepage
-Turn the `vrt_notifications` watcher list into instant social proof and accelerate pre-launch list growth.
-
-- **Backend**
-  - New endpoint `GET /api/cars/most-watched?limit=8`
-    - Aggregate `vrt_notifications` → `{car_id, watchers}` sorted desc
-    - Join against `vrt_registry`, return only `!is_eligible` cars
-    - Pad with random pending cars if fewer than `limit` have subscribers (so the row is never empty at launch)
-  - Reuse the existing `_compute_status()` helper for countdown payload
-- **Frontend**
-  - New `<MostWatchedCarousel />` component, mounted on `Directory.jsx` above the existing stat bar / under the hero
-  - Horizontal scroll on mobile, 4-up grid on desktop
-  - Each card: car name · category badge · live countdown · **🔥 X watching** chip · link to `/car/:id`
-  - Skeleton state while loading; hide entire section gracefully if API returns `[]`
-- **Acceptance**
-  - Carousel reflects new subscriptions within one page load
-  - Sorted strictly by watcher count desc, ties broken by closest VRT freedom date
+- `GET /api/cars/most-watched?limit=8` — aggregates `vrt_notifications`, joins `vrt_registry`, pending-only, sorts watchers desc then freedom date asc, pads with closest-to-eligible cars if list is short
+- `<MostWatchedCarousel />` mounted in `Directory.jsx` between hero and directory grid
+- 4-up grid desktop, horizontal scroll-snap mobile, skeleton loader, scroll arrows
+- Each card: category · 🔥 watchers chip · car name · countdown · deep-link to `/car/:id`
+- Section hides cleanly when API returns `[]`
 
 ---
 

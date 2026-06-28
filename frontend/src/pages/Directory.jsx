@@ -5,6 +5,7 @@ import CarCard from "@/components/CarCard";
 import StatBar from "@/components/StatBar";
 import TrendingTicker from "@/components/TrendingTicker";
 import SuggestionForm from "@/components/SuggestionForm";
+import MostWatchedCarousel from "@/components/MostWatchedCarousel";
 
 const CATEGORIES = { JDM: "Performance / JDM", EURO: "Everyday / Euro Classic" };
 
@@ -71,6 +72,8 @@ export default function Directory() {
                     {stats && <StatBar stats={stats} />}
                 </div>
             </section>
+
+            <MostWatchedCarousel />
 
             <section className="max-w-7xl mx-auto px-6 md:px-10 py-12" data-testid="directory-section">
                 <div className="flex flex-wrap items-baseline justify-between gap-4 mb-8 pb-4 border-b border-[color:var(--sa-border)]">
