@@ -16,15 +16,17 @@ export function resolveImageUrl(src, fallback) {
 // Wikimedia thumb URLs are stable and CC-licensed; using 1920px for hero, 800px for cards.
 const WM = (path, w) => path.replace(/\/\d+px-/, `/${w}px-`);
 
+const E30            = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/BMW_E30_in_silver_%28facelift%29%2C_front_left_2024-08-18.jpg/3840px-BMW_E30_in_silver_%28facelift%29%2C_front_left_2024-08-18.jpg";
+const PORSCHE_964    = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/1991_Porsche_964_Turbo_in_Summer_Yellow%2C_front_right.jpg/3840px-1991_Porsche_964_Turbo_in_Summer_Yellow%2C_front_right.jpg";
+const MINI_MK1       = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Morris_Mini-Minor_1959_%28621_AOK%29.jpg/3840px-Morris_Mini-Minor_1959_%28621_AOK%29.jpg";
 const RX7_1994       = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/1994_Mazda_RX-7_R2_in_Vintage_Red%2C_front_left_%28Lime_Rock%29.jpg/3840px-1994_Mazda_RX-7_R2_in_Vintage_Red%2C_front_left_%28Lime_Rock%29.jpg";
-const FAIRLADY_Z     = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/1970-1973_Nissan_Fairlady_Z.jpg/3840px-1970-1973_Nissan_Fairlady_Z.jpg";
 const ESCORT_COSSIE  = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/1996_Ford_Escort_RS_Cosworth_2.0_Front.jpg/3840px-1996_Ford_Escort_RS_Cosworth_2.0_Front.jpg";
 
-// Hero rotation — all confirmed vintage classics (1970, 1994, 1996).
+// Hero rotation — three iconic confirmed-vintage classics.
 export const HERO_IMAGES = [
-    WM(RX7_1994, 1920),
-    WM(FAIRLADY_Z, 1920),
-    WM(ESCORT_COSSIE, 1920),
+    WM(E30, 1920),         // BMW E30 (1982-1994)
+    WM(PORSCHE_964, 1920), // 1991 Porsche 911 (964) Turbo
+    WM(MINI_MK1, 1920),    // 1959 Morris Mini (Mk1 era)
 ];
 
 // Per-category placeholder for car cards when no individual image is set.
